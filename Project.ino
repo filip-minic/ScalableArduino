@@ -1,7 +1,7 @@
 /* Model: Arduino UNO R3 - ATmega328P
    Software for monitoring temperature,humidity, RFID RC522 devices and providing joystick control
-   Flash usage: 16538 bytes
-   Dynamic usage: 963 bytes
+   Sketch uses 16192 bytes (50%) of program storage space. Maximum is 32256 bytes.
+   Global variables use 989 bytes (48%) of dynamic memory, leaving 1059 bytes for local variables. Maximum is 2048 bytes.
 */
 
 #include <stdarg.h>
@@ -58,6 +58,7 @@ SimpleDHT11 dht11;
 LiquidCrystal lcd(3, 4, 5, 6, 7, 8);
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
+// Helper function to dump some information from the RFID reader
 void dump_byte_array(byte *buffer, byte bufferSize) {
   for (byte i = 0; i < bufferSize; i++) {
     Serial.print(buffer[i] < 0x10 ? " 0" : " ");
@@ -65,6 +66,7 @@ void dump_byte_array(byte *buffer, byte bufferSize) {
   }
 }
 
+// printf function for the serial interface
 int serial_printf(char *str, ...) {
   int i, count = 0, j = 0, flag = 0;
   char temp[ARDBUFFER + 1];
@@ -196,5 +198,5 @@ void loop() {
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
-    serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
+  serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
 }
