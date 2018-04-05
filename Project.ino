@@ -172,9 +172,6 @@ void loop() {
 
     Serial.println(F("**Card Detected**"));
 
-    Serial.print(F("UID: "));
-
-    //------------------------------------------- GET FIRST NAME
     status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, 4, &key, &(mfrc522.uid)); //line 834 of MFRC522.cpp file
     if (status != MFRC522::STATUS_OK) {
       Serial.print(F("Authentication failed: "));
