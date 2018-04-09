@@ -195,5 +195,5 @@ void loop() {
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
-  //serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
+  serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
 }
