@@ -190,10 +190,10 @@ void loop() {
     Serial.print("\",\"type\":\"");
     Serial.print(mfrc522.PICC_GetTypeName(mfrc522.PICC_GetType(mfrc522.uid.sak)));
     Serial.print("\"}");
-    Serial.println(F("\n**End Reading**\n"));
+    Serial.println(F("\n**End Reading**"));
 
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
-  serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
+  //serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
 }
