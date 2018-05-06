@@ -20,7 +20,9 @@
 // RFID Library for MFRC522
 #include <MFRC522.h>
 
+// Define print buffer size
 #define ARDBUFFER 16
+// Define the pins for the RFID reader
 #define RST_PIN 9
 #define SS_PIN 10
 // Preprocessor macro for the length of the display line and rows
@@ -131,14 +133,18 @@ void setup() {
 }
 
 void loop() {
+  // Get current time and convert it to long
   dt = clock.getDateTime();
   current_time = atol(clock.dateFormat("U", dt));
+  // If enough time has passed execute code block
   if ((current_time - last_update_time) > DELAY) {
+    // Update last update time
     last_update_time = current_time;
 
+    // Read temperature and humidity
     dht11.read(pinDHT11, &temperature, &humidity, data);
 
-    // Write to LCD and get humidity
+    // Write to LCD the temperature and humidity
     lcd.setCursor(0, 0);
     lcd.print("Temp: ");
     lcd.print(temperature);
@@ -148,6 +154,7 @@ void loop() {
     lcd.print(humidity);
     lcd.print("%");
 
+    // Print time, temperature and humidity to serial
     serial_printf("{\"timestamp\":%l,\"temperature\":%d,\"humidity\":%d}", current_time, (uint_fast32_t)temperature, (uint_fast32_t)humidity);
 
     // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
@@ -171,7 +178,7 @@ void loop() {
     }
 
     Serial.println(F("**Card Detected**"));
-
+    /*
     status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, 4, &key, &(mfrc522.uid)); //line 834 of MFRC522.cpp file
     if (status != MFRC522::STATUS_OK) {
       Serial.print(F("Authentication failed: "));
@@ -185,6 +192,7 @@ void loop() {
       Serial.println(mfrc522.GetStatusCodeName(status));
       return;
     }
+    */
     Serial.print("{\"UID\":\"");
     dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
     Serial.print("\",\"type\":\"");
@@ -195,5 +203,6 @@ void loop() {
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
+  // Print Joystick position
   serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
 }
