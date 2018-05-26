@@ -33,7 +33,7 @@
 // Delay for the sampling of temperature and time
 #define DELAY 1
 // Baud rate
-#define BAUD_RATE 9600
+#define BAUD_RATE 57600
 
 // Define reader macros for Joystick pins
 #define x_val analogRead(0)
@@ -60,13 +60,22 @@ SimpleDHT11 dht11;
 LiquidCrystal lcd(3, 4, 5, 6, 7, 8);
 MFRC522 mfrc522(SS_PIN, RST_PIN);
 
-// Helper function to dump some information from the RFID reader
-void dump_byte_array(byte *buffer, byte bufferSize) {
+void print_hex(byte *buffer, byte bufferSize) {
   for (byte i = 0; i < bufferSize; i++) {
-    Serial.print(buffer[i] < 0x10 ? " 0" : " ");
+    Serial.print(buffer[i] < 0x10 ? "0" : "");
     Serial.print(buffer[i], HEX);
   }
 }
+
+// UID reader
+const byte* read_uid(MFRC522* mfrc522) {
+  byte uid[mfrc522->uid.size];
+  for (byte i = 0; i < mfrc522->uid.size; ++i) {
+    uid[i] = mfrc522->uid.uidByte[i];
+  }
+  return uid;
+}
+
 
 // printf function for the serial interface
 int serial_printf(char *str, ...) {
@@ -156,15 +165,12 @@ void loop() {
 
     // Print time, temperature and humidity to serial
     serial_printf("{\"timestamp\":%l,\"temperature\":%d,\"humidity\":%d}", current_time, (uint_fast32_t)temperature, (uint_fast32_t)humidity);
-
+    mfrc522.PCD_Init();
     // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
     MFRC522::MIFARE_Key key;
-    for (byte i = 0; i < 6; i++)
+    for (byte i = 0; i < 6; i++){
       key.keyByte[i] = 0xFF;
-
-    //some variables we need
-    uint_fast8_t  block;
-    uint_fast8_t  len;
+    }
     MFRC522::StatusCode status;
 
     // Look for new cards
@@ -177,29 +183,12 @@ void loop() {
       return;
     }
 
-    Serial.println(F("**Card Detected**"));
-    /*
-    status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, 4, &key, &(mfrc522.uid)); //line 834 of MFRC522.cpp file
-    if (status != MFRC522::STATUS_OK) {
-      Serial.print(F("Authentication failed: "));
-      Serial.println(mfrc522.GetStatusCodeName(status));
-      return;
-    }
-
-    status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, 1, &key, &(mfrc522.uid)); //line 834
-    if (status != MFRC522::STATUS_OK) {
-      Serial.print(F("Authentication failed: "));
-      Serial.println(mfrc522.GetStatusCodeName(status));
-      return;
-    }
-    */
     Serial.print("{\"UID\":\"");
-    dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
-    Serial.print("\",\"type\":\"");
-    Serial.print(mfrc522.PICC_GetTypeName(mfrc522.PICC_GetType(mfrc522.uid.sak)));
-    Serial.print("\"}");
-    Serial.println(F("\n**End Reading**"));
-
+    print_hex(read_uid(&mfrc522), MFRC522::MF_KEY_SIZE);
+    Serial.print("\"}\n");
+    //Serial.print("\",\"type\":\"");
+    //Serial.print(mfrc522.PICC_GetTypeName(mfrc522.PICC_GetType(mfrc522.uid.sak)));
+    //Serial.print("\"}\n");
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
