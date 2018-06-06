@@ -11,8 +11,6 @@
 #include <SimpleDHT.h>
 // I2C / TWI devices
 #include <Wire.h>
-// Precise time module library
-#include <DS3231.h>
 // LCD screen library
 #include <LiquidCrystal.h>
 // Communicate with SPI devices
