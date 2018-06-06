@@ -1,7 +1,7 @@
 /* Model: Arduino UNO R3 - ATmega328P
-   Software for monitoring temperature,humidity, RFID RC522 devices and providing joystick control
-   Sketch uses 16192 bytes (50%) of program storage space. Maximum is 32256 bytes.
-   Global variables use 989 bytes (48%) of dynamic memory, leaving 1059 bytes for local variables. Maximum is 2048 bytes.
+   Software for monitoring temperature, humidity, RFID RC522 devices and providing joystick control
+   Sketch uses 10230 bytes (31%) of program storage space. Maximum is 32256 bytes.
+   Global variables use 580 bytes (28%) of dynamic memory, leaving 1468 bytes for local variables. Maximum is 2048 bytes.
 */
 
 #include <stdarg.h>
@@ -31,31 +31,27 @@
 // Preprocessor macro for the pin where the temperature and humidity module is located
 #define pinDHT11 2
 // Delay for the sampling of temperature and time
-#define DELAY 1
+#define DELAY 50
 // Baud rate
 #define BAUD_RATE 57600
 
 // Define reader macros for Joystick pins
 #define x_val analogRead(0)
 #define y_val analogRead(1)
+#define switch_val digitalRead(0)
 
 // Global variables
-uint_fast32_t last_update_time = 0;
 int_fast8_t temperature;
 uint_fast8_t humidity;
 uint_fast8_t data[40];
-uint_fast32_t current_time;
+uint_fast16_t passed_time;
 
 /* Instantiate structures/classes
-    DS3231 - real time clock module
-    RTCDateTime - datetime type for the clock
     SimpleDHT11 - temperature and humidity sensor
     LiquidCrystal - LCD screen structure
     MFRC522 - the RC522 reader
 */
 
-DS3231 clock;
-RTCDateTime dt;
 SimpleDHT11 dht11;
 LiquidCrystal lcd(3, 4, 5, 6, 7, 8);
 MFRC522 mfrc522(SS_PIN, RST_PIN);
@@ -75,7 +71,6 @@ const byte* read_uid(MFRC522* mfrc522) {
   }
   return uid;
 }
-
 
 // printf function for the serial interface
 int serial_printf(char *str, ...) {
@@ -133,23 +128,15 @@ void setup() {
 
   // Setup the LCD length and rows
   lcd.begin(LCD_LEN, LCD_ROWS);
-  // Start the clock module
-  clock.begin();
-  // Set current compiling time
-  clock.setDateTime(__DATE__, __TIME__);
-  // delay instantiate
-  last_update_time = atol(clock.dateFormat("U", dt));
 }
 
 void loop() {
   // Get current time and convert it to long
-  dt = clock.getDateTime();
-  current_time = atol(clock.dateFormat("U", dt));
   // If enough time has passed execute code block
-  if ((current_time - last_update_time) > DELAY) {
+  passed_time++;
+  if ((passed_time) > DELAY) {
     // Update last update time
-    last_update_time = current_time;
-
+    passed_time=0;
     // Read temperature and humidity
     dht11.read(pinDHT11, &temperature, &humidity, data);
 
@@ -162,9 +149,9 @@ void loop() {
     lcd.print("Humidity: ");
     lcd.print(humidity);
     lcd.print("%");
-
+    
     // Print time, temperature and humidity to serial
-    serial_printf("{\"timestamp\":%l,\"temperature\":%d,\"humidity\":%d}", current_time, (uint_fast32_t)temperature, (uint_fast32_t)humidity);
+    serial_printf("{\"timestamp\":%l,\"temperature\":%d,\"humidity\":%d}", (uint_fast32_t)temperature, (uint_fast32_t)humidity);
     mfrc522.PCD_Init();
     // Prepare key - all keys are set to FFFFFFFFFFFFh at chip delivery from the factory.
     MFRC522::MIFARE_Key key;
@@ -186,12 +173,9 @@ void loop() {
     Serial.print("{\"UID\":\"");
     print_hex(read_uid(&mfrc522), MFRC522::MF_KEY_SIZE);
     Serial.print("\"}\n");
-    //Serial.print("\",\"type\":\"");
-    //Serial.print(mfrc522.PICC_GetTypeName(mfrc522.PICC_GetType(mfrc522.uid.sak)));
-    //Serial.print("\"}\n");
     mfrc522.PICC_HaltA();
     mfrc522.PCD_StopCrypto1();
   }
   // Print Joystick position
-  serial_printf("{\"x\":%d,\"y\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val);
+  serial_printf("{\"x\":%d,\"y\":%d,\"switch\":%d}", (uint_fast32_t)x_val, (uint_fast32_t)y_val, (uint_fast32_t)switch_val);
 }
